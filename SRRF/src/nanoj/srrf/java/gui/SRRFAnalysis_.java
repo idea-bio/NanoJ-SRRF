@@ -1,6 +1,7 @@
 package nanoj.srrf.java.gui;
 
 import ij.IJ;
+import ij.Macro;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.NonBlockingGenericDialog;
@@ -50,6 +51,7 @@ public class SRRFAnalysis_ extends _BaseSRRFDialog_ {
     private Map<String, double[]> driftTable = null;
     protected ImagePlus impReconstruction;
     private String batchOutput;
+    private Boolean isHeadless;
 
     @Override
     public boolean beforeSetupDialog(String arg) {
@@ -60,6 +62,9 @@ public class SRRFAnalysis_ extends _BaseSRRFDialog_ {
 
     @Override
     public void setupDialog() {
+        isHeadless = Boolean.parseBoolean(System.getProperty("java.awt.headless", "false"));
+        if (isHeadless)
+            return;
 
         gd = new NonBlockingGenericDialog("Super-Resolution Radial Fluctuations...");
 
@@ -89,52 +94,74 @@ public class SRRFAnalysis_ extends _BaseSRRFDialog_ {
         }
         gd.addCheckbox("Show_Preview", false);
 
-        gd.addMessage("Running mode: "+(prefs.get("NJ.kernelMode", false)?"OpenCL Safe Mode (Java Thread Pool)":"Full OpenCL Acceleration"));
+        gd.addMessage("Running mode: " + (prefs.get("NJ.kernelMode", false) ? "OpenCL Safe Mode (Java Thread Pool)" : "Full OpenCL Acceleration"));
 
         //gd.addHelp("file:///Users/nils/Documents/Work/Website/my-website/index.html");
     }
 
     @Override
     public boolean loadSettings() {
-        // ~~ Parameters ~~
-        ringRadius = (float)  min(max(gd.getNextNumber(), 0.1f), 3f);
-        radialityMagnification = (int) max(gd.getNextNumber(), 1);
-        symmetryAxes = (int) min(max(gd.getNextNumber(),2),16);
 
-        doDriftCorrection = gd.getNextBoolean();
-        doBatch = gd.getNextBoolean();
+        if (isHeadless) {
+            String args = Macro.getOptions();
+            args = args.toLowerCase();
 
-        // ~~ Time-Lapse Settings
-        framesPerTimePoint = (int) gd.getNextNumber();
+            ringRadius = Float.parseFloat(Macro.getValue(args, "ringRadius", "0.5"));
+            radialityMagnification = Integer.parseInt(Macro.getValue(args, "radialityMagnification", "5"));
+            symmetryAxes = Integer.parseInt(Macro.getValue(args, "symmetryAxes", "6"));
+            doDriftCorrection = Boolean.parseBoolean(Macro.getValue(args, "doDriftCorrection", "false"));
+            doBatch = Boolean.parseBoolean(Macro.getValue(args, "doBatch", "false"));
+            framesPerTimePoint = Integer.parseInt(Macro.getValue(args, "FPT", "0"));
+            frameStart = Integer.parseInt(Macro.getValue(args, "frameStart", "0"));
+            frameEnd = Integer.parseInt(Macro.getValue(args, "frameEnd", "0"));
+            showAdvancedSettings = false;
+            _showAdvancedSettings = false;
+            maxTemporalBlock = Integer.parseInt(Macro.getValue(args, "maxTemporalBlock", "100"));
+            prefSpatialBlock = Integer.parseInt(Macro.getValue(args, "prefSpatialBlock", "0"));
+            showPreview = false;
+            display = "Radiality";
 
-        // ~~ Performance ~~
-        frameStart = (int) gd.getNextNumber();
-        frameEnd = (int) gd.getNextNumber();
+        } else {
 
-        showAdvancedSettings = gd.getNextBoolean();
-        if (!_showAdvancedSettings && showAdvancedSettings && _SRRFExtraSettings == null) {
-            _SRRFExtraSettings = new SRRFAnalysis_ExtraSettings_();
-            _SRRFExtraSettings.start();
-            _showAdvancedSettings = true;
+            //~~ Parameters ~~
+            ringRadius = (float) min(max(gd.getNextNumber(), 0.1f), 3f);
+            radialityMagnification = (int) max(gd.getNextNumber(), 1);
+            symmetryAxes = (int) min(max(gd.getNextNumber(), 2), 16);
+
+            doDriftCorrection = gd.getNextBoolean();
+            doBatch = gd.getNextBoolean();
+
+            // ~~ Time-Lapse Settings
+            framesPerTimePoint = (int) gd.getNextNumber();
+
+            // ~~ Performance ~~
+            frameStart = (int) gd.getNextNumber();
+            frameEnd = (int) gd.getNextNumber();
+
+            showAdvancedSettings = gd.getNextBoolean();
+            if (!_showAdvancedSettings && showAdvancedSettings && _SRRFExtraSettings == null) {
+                _SRRFExtraSettings = new SRRFAnalysis_ExtraSettings_();
+                _SRRFExtraSettings.start();
+                _showAdvancedSettings = true;
+            } else if (_SRRFExtraSettings != null && _SRRFExtraSettings.gd != null) {
+                _SRRFExtraSettings.gd.dispose();
+                _SRRFExtraSettings = null;
+            }
+            if (showAdvancedSettings) _showAdvancedSettings = true;
+            else _showAdvancedSettings = false;
+            maxTemporalBlock = (int) gd.getNextNumber();
+            prefSpatialBlock = (int) gd.getNextNumber();
+
+            // ~~ Preview ~~
+            if (log.useDebugChoices()) {
+                display = gd.getNextRadioButton();
+            } else display = "Radiality";
+            showPreview = gd.getNextBoolean();
+
+            // Check values or load values
+            if (frameStart != 0 && frameEnd != 0 && frameEnd < frameStart) return false;
+
         }
-        else if (_SRRFExtraSettings != null && _SRRFExtraSettings.gd != null) {
-            _SRRFExtraSettings.gd.dispose();
-            _SRRFExtraSettings = null;
-        }
-        if (showAdvancedSettings) _showAdvancedSettings = true;
-        else _showAdvancedSettings = false;
-        maxTemporalBlock = (int) gd.getNextNumber();
-        prefSpatialBlock = (int) gd.getNextNumber();
-
-        // ~~ Preview ~~
-        if (log.useDebugChoices()) {
-            display = gd.getNextRadioButton();
-        }
-        else display = "Radiality";
-        showPreview = gd.getNextBoolean();
-
-        // Check values or load values
-        if (frameStart!=0 && frameEnd!=0 && frameEnd < frameStart) return false;
 
         setPrefs("ringRadius", ringRadius);
         setPrefs("radialityMagnification", radialityMagnification);
