@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="NanoJ-SRRF:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/NanoJ_SRRF_jar</output-path>
+    <root id="root">
+      <element id="archive" name="NanoJ-SRRF.jar">
+        <element id="module-output" name="NanoJ-SRRF" />
+      </element>
+      <element id="file-copy" path="$PROJECT_DIR$/SRRF/resources/ij-1.53g.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/SRRF/resources/jgoogleanalytics_0.4.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/SRRF/resources/aparapi.jar" />
+      <element id="library" level="project" name="nanoj" />
+    </root>
+  </artifact>
+</component>

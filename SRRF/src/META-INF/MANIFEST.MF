@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: 
+Class-Path: ij-1.53g.jar jgoogleanalytics_0.4.jar aparapi.jar NanoJ_Core
+ .jar
+

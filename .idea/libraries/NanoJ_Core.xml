@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="NanoJ-Core">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/SRRF/resources/NanoJ-Core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="jar://$PROJECT_DIR$/SRRF/resources/NanoJ-Core.jar!/" recursive="false" />
+  </library>
+</component>
