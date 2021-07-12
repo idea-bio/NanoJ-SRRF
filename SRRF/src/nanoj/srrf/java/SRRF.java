@@ -1,11 +1,15 @@
 package nanoj.srrf.java;
 
+import com.aparapi.Range;
+import com.aparapi.internal.kernel.KernelManager;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
-import nanoj.core.java.aparapi.NJKernel;
+//import nanoj.core.java.aparapi.NJKernel;
 import nanoj.core.java.tools.Log;
+import com.aparapi.Kernel;
+//import static nanoj.core.java.array.ArrayMath.getSumValue;
+import java.util.concurrent.TransferQueue;
 
-import static nanoj.core.java.array.ArrayMath.getSumValue;
 import static nanoj.core.java.array.ImageStackToFromArray.ImageStackToFloatArray;
 
 /**
@@ -20,9 +24,6 @@ public class SRRF {
 
     private static Log log = new Log();
 
-    public String getExecutionMode() {
-        return kernel.getExecutionMode().toString();
-    }
 
     ///////////////////
     // Setup methods //
@@ -99,9 +100,11 @@ public class SRRF {
     }
 }
 
-class Kernel_SRRF extends NJKernel {
 
-    private Log log = new Log();
+
+class Kernel_SRRF extends Kernel {
+
+    //private Log log = new Log();
 
     public static final int STEP_CALCULATE_GXGY = 0;
     public static final int STEP_CALCULATE_RADIALITY = 1;
@@ -176,7 +179,7 @@ class Kernel_SRRF extends NJKernel {
 
         // Upload arrays
         setExplicit(true);
-        autoChooseDeviceForNanoJ();
+        //autoChooseDeviceForNanoJ();
 
         //System.out.println("About to upload at magnification "+magnification);
         //System.out.println(Arrays.toString(shiftX));
@@ -197,25 +200,25 @@ class Kernel_SRRF extends NJKernel {
 
         //System.out.println("upload Success");
 
-        log.startTimer();
+        //log.startTimer();
 
-        log.msg(3, "Kernel_SRRF: calculating SRRF");
+        //.msg("Kernel_SRRF: calculating SRRF");
 
         // Step 1 - calculate Gx and Gy
         stepFlag = STEP_CALCULATE_GXGY;
-        execute(widthHeightTime);
+        execute(Range.create(widthHeightTime));
 
         //System.out.println("Gradient Calc success");
 
         // Step 2 - calculate Radiality
         stepFlag = STEP_CALCULATE_RADIALITY;
-        execute(widthHeightMBorderless);
+        execute(Range.create(widthHeightMBorderless));
 
         //System.out.println("Radiality Calc success");
 
         // Step 3 - calculate temporal correlations
         stepFlag = STEP_CALCULATE_SRRF;
-        execute(widthHeightMBorderless);
+        execute(Range.create(widthHeightMBorderless));
 
         //System.out.println("SRRF Calc success");
 
@@ -224,14 +227,14 @@ class Kernel_SRRF extends NJKernel {
         //System.out.println("Get Array success");
         //this bit solves a really strange bug where sometimes aparapi returns an empty array, we try to see if we have
         //a zero-filled array and if so we force a re-run on JTP
-        if (getExecutionMode()!=EXECUTION_MODE.JTP) {
+        /*if (getExecutionMode()!=EXECUTION_MODE.JTP) {
             if(getSumValue(SRRFArray)==0) {
                 runOnceAsJTP();
                 return calculate(pixels, width, height, shiftX, shiftY);
             }
-        }
+        }*/
 
-        log.msg(3, "Kernel_SRRF: done");
+        //log.msg( "Kernel_SRRF: done");
         return SRRFArray;
     }
 

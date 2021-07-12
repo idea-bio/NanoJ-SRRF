@@ -1,5 +1,8 @@
 package nanoj.srrf.java.gui;
 
+import com.aparapi.device.Device;
+import com.aparapi.device.OpenCLDevice;
+import com.aparapi.internal.kernel.KernelManager;
 import ij.IJ;
 import ij.Macro;
 import ij.ImagePlus;
@@ -7,7 +10,7 @@ import ij.ImageStack;
 import ij.gui.NonBlockingGenericDialog;
 import ij.measure.ResultsTable;
 import ij.process.FloatProcessor;
-import nanoj.core.java.aparapi.CLDevicesInfo;
+//import nanoj.core.java.aparapi.CLDevicesInfo;
 import nanoj.core.java.gui.tools.io.SaveStackAsNJI_;
 import nanoj.core.java.io.LoadNanoJTable;
 import nanoj.core.java.io.ThreadedPartitionData;
@@ -25,7 +28,7 @@ import static nanoj.core.java.array.ArrayMath.getMinValue;
 import static nanoj.core.java.imagej.ResultsTableTools.resultsTableToDataMap;
 import static nanoj.core.java.io.OpenNanoJDataset.openNanoJDataset;
 import static nanoj.core.java.tools.DontShowAgainDialog.dontShowAgainDialog;
-import static nanoj.core.java.tools.NJ_LUT.applyLUT_NanoJ_Orange;
+//import static nanoj.core.java.tools.NJ_LUT.applyLUT_NanoJ_Orange;
 import static nanoj.srrf.java.MinimizeSRRFPatterning.minimizeSRRFPatterning;
 
 /**
@@ -464,7 +467,7 @@ public class SRRFAnalysis_ extends _BaseSRRFDialog_ {
             impReconstruction = new ImagePlus(imp.getTitle() + " - SRRF", imsReconstruction);
             impReconstruction.show();
             ij.IJ.run(impReconstruction, "Enhance Contrast", "saturated=0.35");
-            applyLUT_NanoJ_Orange(impReconstruction);
+            //applyLUT_NanoJ_Orange(impReconstruction);
         }
         else {
             imsReconstruction = impReconstruction.getImageStack();
@@ -506,7 +509,17 @@ public class SRRFAnalysis_ extends _BaseSRRFDialog_ {
         //_blockBorderConsideringDrift += 1;
         //log.msg("maxShift="+getMaxShift());
 
-        float memAvailable = (float) (CLDevicesInfo.getGlobalMemSizeChosenDevice() * 0.75);
+
+
+        Device d1 = KernelManager.instance().bestDevice();
+
+        //float memAvailable = (float) (CLDevicesInfo.getGlobalMemSizeChosenDevice() * 0.75);
+        String s = d1.toString();
+        log.msg(s);
+        float memAvailable =0;
+        if(d1 instanceof OpenCLDevice )
+            memAvailable = ((OpenCLDevice)d1).getGlobalMemSize();
+        memAvailable = memAvailable *0.75F;
         if (memAvailable == 0) {
             String msg = "GPU error - Check CL device is set up correctly, running on Safe Mode for now\n" +
                     "You can later try to enable OpenCL on Plugins>NanoJ>Tools>Debug Preferences";
